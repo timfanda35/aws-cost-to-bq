@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import sys
@@ -12,8 +13,13 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
-    partition = os.environ.get("PARTITION") or None
+def main(argv=None) -> None:
+    parser = argparse.ArgumentParser(description="Run the AWS Cost to BQ pipeline job.")
+    parser.add_argument("--partition", default=None, metavar="YYYY-MM",
+                        help="Billing period to process. Overrides the PARTITION env var.")
+    args = parser.parse_args(argv)
+
+    partition = args.partition or os.environ.get("PARTITION") or None
 
     logger.info("job.started", extra={
         "log_event": "job.started",
