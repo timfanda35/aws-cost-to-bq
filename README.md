@@ -50,7 +50,7 @@ Copy `.env.example` to `.env` and fill in the values.
 | `BILLING_SCHEMA` | No | `cur2` | BigQuery schema to use. `cur2` = AWS CUR 2.0 (partition: `bill_billing_period_start_date`, cluster: `line_item_usage_start_date`, `line_item_usage_account_id`); `focus1.2` = AWS FOCUS 1.2 (partition: `BillingPeriodStart`, cluster: `BillingAccountId`) |
 | `PORT` | No | `8080` | HTTP port for the uvicorn server |
 | `LOG_LEVEL` | No | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
-| `PARTITION` | No | — | `job.py` only. Process a single billing period (`YYYY-MM`, e.g. `2026-04`). Omit to run the default 3-period window. |
+| `PARTITION` | No | — | `run_job.py` only. Process a single billing period (`YYYY-MM`, e.g. `2026-04`). Can also be passed as `--partition YYYY-MM` CLI arg (CLI takes precedence). Omit to run the default 3-period window. |
 
 ## Local Development
 
@@ -121,6 +121,7 @@ gcloud run deploy billing-loader \
   --region "${GCP_REGION:-us-central1}" \
   --no-allow-unauthenticated \
   --service-account "${SERVICE_ACCOUNT}" \
+  --args "uvicorn,main:app,--host,0.0.0.0,--port,8080,--timeout-keep-alive,300" \
   --set-env-vars "SOURCE_TYPE=s3,SOURCE_BUCKET=${SOURCE_BUCKET},SOURCE_PREFIX=${SOURCE_PREFIX:-},EXPORT_NAME=${EXPORT_NAME},GCS_BUCKET=${GCS_BUCKET},GCS_DESTINATION_PREFIX=${GCS_DESTINATION_PREFIX:-},BQ_PROJECT_ID=${BQ_PROJECT_ID},BQ_DATASET_ID=${BQ_DATASET_ID},BQ_TABLE_ID=${BQ_TABLE_ID},AWS_REGION=${AWS_REGION}" \
   --set-secrets "AWS_ACCESS_KEY_ID=billing-loader-aws-key-id:latest,AWS_SECRET_ACCESS_KEY=billing-loader-aws-secret-key:latest"
 ```
@@ -150,7 +151,7 @@ gcloud scheduler jobs run billing-loader-daily --location "${GCP_REGION:-us-cent
 
 Cloud Run Jobs run the container to completion without an HTTP server — no uvicorn, no idle port. Cloud Scheduler triggers a Job execution directly via the Cloud Run Admin API.
 
-The same Docker image serves both modes. Override the default `CMD` at deploy time using `--command`/`--args`.
+The same Docker image serves both modes. The image uses `entrypoint.sh` as its `ENTRYPOINT` (a minimal `exec "$@"` pass-through for PID 1 signal handling) and defaults to Cloud Run Job mode. Cloud Run Service deployments override `CMD` via `--args`.
 
 **1. Build the image** (same as the Cloud Run Service build):
 
@@ -166,8 +167,6 @@ gcloud run jobs create billing-loader-job \
   --image "${IMAGE}" \
   --region "${GCP_REGION:-us-central1}" \
   --service-account "${SERVICE_ACCOUNT}" \
-  --command "python" \
-  --args "job.py" \
   --set-env-vars "SOURCE_TYPE=s3,SOURCE_BUCKET=${SOURCE_BUCKET},SOURCE_PREFIX=${SOURCE_PREFIX:-},EXPORT_NAME=${EXPORT_NAME},GCS_BUCKET=${GCS_BUCKET},GCS_DESTINATION_PREFIX=${GCS_DESTINATION_PREFIX:-},BQ_PROJECT_ID=${BQ_PROJECT_ID},BQ_DATASET_ID=${BQ_DATASET_ID},BQ_TABLE_ID=${BQ_TABLE_ID},AWS_REGION=${AWS_REGION}" \
   --set-secrets "AWS_ACCESS_KEY_ID=billing-loader-aws-key-id:latest,AWS_SECRET_ACCESS_KEY=billing-loader-aws-secret-key:latest"
 ```
@@ -193,10 +192,16 @@ gcloud run jobs execute billing-loader-job \
   --region "${GCP_REGION:-us-central1}" \
   --wait
 
-# Run for a single billing period
+# Run for a single billing period (via env var)
 gcloud run jobs execute billing-loader-job \
   --region "${GCP_REGION:-us-central1}" \
   --update-env-vars "PARTITION=2026-04" \
+  --wait
+
+# Run for a single billing period (via CLI arg)
+gcloud run jobs execute billing-loader-job \
+  --region "${GCP_REGION:-us-central1}" \
+  --args "python,run_job.py,--partition,2026-04" \
   --wait
 ```
 

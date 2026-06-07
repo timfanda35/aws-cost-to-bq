@@ -6,8 +6,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN chmod +x entrypoint.sh
 
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--timeout-keep-alive", "300"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+# Default: Cloud Run Job mode.
+# To run as HTTP server: override CMD with uvicorn args (see Cloud Run Service deployment in README).
+CMD ["python", "run_job.py"]
