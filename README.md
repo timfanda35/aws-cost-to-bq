@@ -50,7 +50,7 @@ Copy `.env.example` to `.env` and fill in the values.
 | `BILLING_SCHEMA` | No | `cur2` | BigQuery schema to use. `cur2` = AWS CUR 2.0 (partition: `bill_billing_period_start_date`, cluster: `line_item_usage_start_date`, `line_item_usage_account_id`); `focus1.2` = AWS FOCUS 1.2 (partition: `BillingPeriodStart`, cluster: `BillingAccountId`) |
 | `PORT` | No | `8080` | HTTP port for the uvicorn server |
 | `LOG_LEVEL` | No | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
-| `PARTITION` | No | — | `run_job.py` only. Process a single billing period (`YYYY-MM`, e.g. `2026-04`). Omit to run the default 3-period window. |
+| `PARTITION` | No | — | `run_job.py` only. Process a single billing period (`YYYY-MM`, e.g. `2026-04`). Can also be passed as `--partition YYYY-MM` CLI arg (CLI takes precedence). Omit to run the default 3-period window. |
 
 ## Local Development
 
@@ -192,10 +192,16 @@ gcloud run jobs execute billing-loader-job \
   --region "${GCP_REGION:-us-central1}" \
   --wait
 
-# Run for a single billing period
+# Run for a single billing period (via env var)
 gcloud run jobs execute billing-loader-job \
   --region "${GCP_REGION:-us-central1}" \
   --update-env-vars "PARTITION=2026-04" \
+  --wait
+
+# Run for a single billing period (via CLI arg)
+gcloud run jobs execute billing-loader-job \
+  --region "${GCP_REGION:-us-central1}" \
+  --args "python,run_job.py,--partition,2026-04" \
   --wait
 ```
 
