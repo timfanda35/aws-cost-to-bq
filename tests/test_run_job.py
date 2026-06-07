@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-import job
+import run_job
 
 
 def _make_env():
@@ -23,9 +23,9 @@ def test_job_exits_zero_on_success(monkeypatch):
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("PARTITION", raising=False)
 
-    with patch("job.run_pipeline", return_value={"run_id": "20260607-1234567890"}) as mock_pipeline:
+    with patch("run_job.run_pipeline", return_value={"run_id": "20260607-1234567890"}) as mock_pipeline:
         with pytest.raises(SystemExit) as exc_info:
-            job.main()
+            run_job.main()
         assert exc_info.value.code == 0
     mock_pipeline.assert_called_once_with(partition=None)
 
@@ -35,9 +35,9 @@ def test_job_exits_one_on_failure(monkeypatch):
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("PARTITION", raising=False)
 
-    with patch("job.run_pipeline", side_effect=RuntimeError("pipeline exploded")):
+    with patch("run_job.run_pipeline", side_effect=RuntimeError("pipeline exploded")):
         with pytest.raises(SystemExit) as exc_info:
-            job.main()
+            run_job.main()
         assert exc_info.value.code == 1
 
 
@@ -46,8 +46,8 @@ def test_job_passes_partition_env_var(monkeypatch):
         monkeypatch.setenv(k, v)
     monkeypatch.setenv("PARTITION", "2026-04")
 
-    with patch("job.run_pipeline", return_value={"run_id": "20260607-1234567890"}) as mock_pipeline:
+    with patch("run_job.run_pipeline", return_value={"run_id": "20260607-1234567890"}) as mock_pipeline:
         with pytest.raises(SystemExit) as exc_info:
-            job.main()
+            run_job.main()
         assert exc_info.value.code == 0
     mock_pipeline.assert_called_once_with(partition="2026-04")
