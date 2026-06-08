@@ -23,7 +23,7 @@ CUR2_SCHEMA = SchemaConfig(
 FOCUS12_SCHEMA = SchemaConfig(
     schema_path=Path(__file__).parent / "bq_schema" / "aws-focus-1.2-parquet.json",
     partition_field="BillingPeriodStart",
-    cluster_fields=("SubAccountName",),
+    cluster_fields=("ChargePeriodStart", "SubAccountName"),
     partition_prefix="billing_period",
 )
 
