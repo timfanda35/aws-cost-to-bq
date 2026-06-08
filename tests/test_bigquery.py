@@ -188,5 +188,5 @@ def test_load_job_focus12_uses_correct_schema():
 
     _, kwargs = bq_client.load_table_from_uri.call_args
     assert kwargs["job_config"].time_partitioning.field == "BillingPeriodStart"
-    assert kwargs["job_config"].clustering_fields == ["SubAccountName"]
+    assert kwargs["job_config"].clustering_fields == ["ChargePeriodStart", "SubAccountName"]
     bq_client.schema_from_json.assert_called_once_with(FOCUS12_SCHEMA.schema_path)
