@@ -38,7 +38,7 @@ def test_load_job_succeeds():
     assert kwargs["job_config"].write_disposition == bigquery.WriteDisposition.WRITE_TRUNCATE
     assert kwargs["job_config"].time_partitioning.type_ == bigquery.TimePartitioningType.MONTH
     assert kwargs["job_config"].time_partitioning.field == "bill_billing_period_start_date"
-    assert kwargs["job_config"].clustering_fields == ["line_item_usage_start_date", "line_item_usage_account_id"]
+    assert kwargs["job_config"].clustering_fields == ["line_item_usage_start_date", "line_item_usage_account_name"]
     bq_client.schema_from_json.assert_called_once_with(CUR2_SCHEMA.schema_path)
     job.result.assert_called_once_with(timeout=3300)
 
@@ -188,5 +188,5 @@ def test_load_job_focus12_uses_correct_schema():
 
     _, kwargs = bq_client.load_table_from_uri.call_args
     assert kwargs["job_config"].time_partitioning.field == "BillingPeriodStart"
-    assert kwargs["job_config"].clustering_fields == ["BillingAccountId"]
+    assert kwargs["job_config"].clustering_fields == ["SubAccountName"]
     bq_client.schema_from_json.assert_called_once_with(FOCUS12_SCHEMA.schema_path)
