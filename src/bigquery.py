@@ -16,14 +16,14 @@ class SchemaConfig:
 CUR2_SCHEMA = SchemaConfig(
     schema_path=Path(__file__).parent / "bq_schema" / "aws-cur-2.0-parquet.json",
     partition_field="bill_billing_period_start_date",
-    cluster_fields=("line_item_usage_start_date", "line_item_usage_account_id"),
+    cluster_fields=("line_item_usage_start_date", "line_item_usage_account_name"),
     partition_prefix="BILLING_PERIOD",
 )
 
 FOCUS12_SCHEMA = SchemaConfig(
     schema_path=Path(__file__).parent / "bq_schema" / "aws-focus-1.2-parquet.json",
     partition_field="BillingPeriodStart",
-    cluster_fields=("BillingAccountId",),
+    cluster_fields=("SubAccountName",),
     partition_prefix="billing_period",
 )
 

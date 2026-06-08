@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rules
+
+- Always create a new branch before developing any feature or fix
+- Always use `python3` instead of `python` when running Python commands (e.g. `python3 main.py`, not `python main.py`; `python3 -m pytest`, not `python -m pytest`)
+
 ## Commands
 
 ```bash
@@ -9,16 +14,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install -r requirements-dev.txt
 
 # Run the server locally
-python main.py
+python3 main.py
 
-# Run all tests
-pytest
+# Run all tests (note: local env may need protobuf workaround)
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python python3 -m pytest
 
 # Run a single test file
-pytest tests/test_pipeline.py
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python python3 -m pytest tests/test_pipeline.py
 
 # Run a specific test
-pytest tests/test_pipeline.py::test_pipeline_processes_three_billing_periods
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python python3 -m pytest tests/test_pipeline.py::test_pipeline_processes_three_billing_periods
 ```
 
 ## Architecture
@@ -43,7 +48,7 @@ S3 (CUR Hive partitions)  →  GCS (staging)  →  BigQuery (partitioned WRITE_T
 - `S3Source` uses instance role credentials if `AWS_ACCESS_KEY_ID` is not set
 - `S3Source` passes `endpoint_url` to `boto3.client()` when `S3_ENDPOINT_URL` is set, enabling AWS VPC/PrivateLink endpoints; omitting the var uses the default public AWS endpoint
 - `BQ_CMEK_KEY_NAME` (optional) — when set, attaches a Cloud KMS key as `destination_encryption_configuration` on the BigQuery load job; omitting it uses Google-managed encryption. Full KMS resource name required: `projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`
-- `BILLING_SCHEMA` (optional, default `cur2`) — selects the BigQuery schema and partition/cluster config; valid values: `cur2` (AWS CUR 2.0, partition on `bill_billing_period_start_date`, cluster on `line_item_usage_start_date` + `line_item_usage_account_id`) and `focus1.2` (FOCUS 1.2, partition on `BillingPeriodStart`, cluster on `BillingAccountId`); schema files are in `src/bq_schema/`
+- `BILLING_SCHEMA` (optional, default `cur2`) — selects the BigQuery schema and partition/cluster config; valid values: `cur2` (AWS CUR 2.0, partition on `bill_billing_period_start_date`, cluster on `line_item_usage_start_date` + `line_item_usage_account_name`) and `focus1.2` (FOCUS 1.2, partition on `BillingPeriodStart`, cluster on `SubAccountName`); schema files are in `src/bq_schema/`
 
 **Source abstraction:** `src/sources/base.py` defines `ObjectMeta` and was designed for multiple source types. Only `S3Source` is implemented.
 
